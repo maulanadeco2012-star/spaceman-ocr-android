@@ -13,7 +13,7 @@ jobs:
           distribution: temurin
           java-version: '17'
           name: Extract Android source ZIP
-          run: 
+          run: |
           unzip -o SpacemanOCRAndroid_Source.zip
           cp -r SpacemanOCRAndroid/. .
       - uses: gradle/actions/setup-gradle@v4
