@@ -19,7 +19,7 @@ jobs:
       - name: Build APK
         run:
       - name: Check AndroidManifest XML
-        run: |
+        run: 
           python3 - <<'PY'
           import xml.etree.ElementTree as ET
           path = "app/src/main/AndroidManifest.xml"
