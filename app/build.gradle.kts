@@ -8,7 +8,8 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.spacemanocr.ocrnew"    minSdk = 23
+        applicationId = "com.example.spacemanocr.ocrnew"    
+        minSdk = 23
         targetSdk = 35
         versionCode = 2
         versionName = "1.0"
