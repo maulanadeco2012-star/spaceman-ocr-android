@@ -1,4 +1,5 @@
 package com.example.spacemanocr
+
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
@@ -17,60 +18,51 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var result: TextView
-
     private val pickImageRequest = 1001
+    private val multiplierPattern = Regex(
+        """(?i)(?<![A-Za-z0-9])(\d{1,5}(?:[.,]\d{1,3})?)\s*[xх](?![A-Za-z])"""
+    )
     private val recognizer by lazy {
-        TextRecognition.getClient(
-            TextRecognizerOptions.DEFAULT_OPTIONS
-        )
+        TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
             setPadding(24, 24, 24, 24)
             setBackgroundColor(Color.rgb(18, 24, 38))
         }
-
         val title = TextView(this).apply {
-            text = "SPACEMAN OCR SIGNAL"
-            textSize = 24f
+            text = "SPACEMAN PEMBACA MULTIPLIER"
+            textSize = 22f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
         }
-
         status = TextView(this).apply {
-            text = "Pilih screenshot game untuk membaca teks."
+            text = "Pilih screenshot game untuk membaca angka multiplier."
             textSize = 16f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
             setPadding(0, 24, 0, 24)
         }
-
         val button = Button(this).apply {
             text = "PILIH SCREENSHOT"
             setOnClickListener { openImagePicker() }
         }
-
         result = TextView(this).apply {
-            text = "Hasil OCR akan muncul di sini."
+            text = "Angka multiplier yang terbaca akan muncul di sini."
             textSize = 16f
             setTextColor(Color.rgb(220, 230, 245))
             setPadding(12, 16, 12, 16)
         }
-
         val scroll = ScrollView(this).apply {
             addView(result)
             layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                0,
-                1f
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
             )
         }
-
         layout.addView(title)
         layout.addView(status)
         layout.addView(button)
@@ -87,49 +79,47 @@ class MainActivity : Activity() {
     }
 
     @Deprecated("Kept for Android compatibility")
-    override fun onActivityResult(
-        requestCode: Int,
-        resultCode: Int,
-        data: Intent?
-    ) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode != pickImageRequest ||
-            resultCode != RESULT_OK
-        ) return
-
+        if (requestCode != pickImageRequest || resultCode != RESULT_OK) return
         val uri: Uri = data?.data ?: run {
             status.text = "Gambar tidak dipilih."
             return
         }
-
-        status.text = "Sedang membaca teks..."
+        status.text = "Sedang membaca screenshot..."
         result.text = ""
-
         try {
             val image = InputImage.fromFilePath(this, uri)
-
             recognizer.process(image)
                 .addOnSuccessListener { visionText ->
                     val text = visionText.text.trim()
-
-                    result.text = if (text.isBlank()) {
-                        "Tidak ada teks terbaca. Coba screenshot lebih jelas."
-                    } else {
-                        text
+                    val multipliers = multiplierPattern.findAll(text)
+                        .map { it.groupValues[1].replace(',', '.') + "x" }
+                        .distinct().toList()
+                    result.text = buildString {
+                        appendLine("MULTIPLIER YANG TERBACA")
+                        appendLine()
+                        if (multipliers.isEmpty()) {
+                            appendLine("Belum menemukan angka dengan tanda x.")
+                            appendLine("Coba screenshot yang menampilkan multiplier dengan jelas.")
+                        } else {
+                            multipliers.forEach { appendLine("• $it") }
+                        }
+                        appendLine()
+                        appendLine("TEKS ASLI DARI SCREENSHOT")
+                        appendLine(if (text.isBlank()) "(Tidak ada teks terbaca)" else text)
+                        appendLine()
+                        append("Catatan: hanya membaca angka pada screenshot, bukan memprediksi hasil berikutnya.")
                     }
-
-                    status.text = "OCR selesai."
+                    status.text = "Pembacaan selesai."
                 }
                 .addOnFailureListener { error ->
                     status.text = "OCR gagal."
-                    result.text = error.localizedMessage
-                        ?: "Tidak dapat membaca gambar."
+                    result.text = error.localizedMessage ?: "Tidak dapat membaca gambar."
                 }
         } catch (error: Exception) {
             status.text = "Gambar tidak dapat dibuka."
-            result.text = error.localizedMessage
-                ?: "Coba pilih gambar lain."
+            result.text = error.localizedMessage ?: "Coba pilih gambar lain."
         }
     }
 
